@@ -13,25 +13,19 @@
 #include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
-#import "QSStrings.h"
 #import <CommonCrypto/CommonCrypto.h>
-#import "NSString+Hex.h"
 
-#define kSecPublicKeyTag @"com.365ime.rsa_public_key"
-#define kSecPrivateKeyTag @"com.365ime.rsa_private_key"
-#define kPublicKeyBegin @"-----BEGIN PUBLIC KEY-----"
-#define kPublicKeyEnd @"-----END PUBLIC KEY-----"
+
+#define kPublicKeyBegin @"-----BEGIN RSA PUBLIC KEY-----"
+#define kPublicKeyEnd @"-----END RSA PUBLIC KEY-----"
 #define kPrivateKeyBegin @"-----BEGIN RSA PRIVATE KEY-----"
 #define kPrivateKeyEnd @"-----END RSA PRIVATE KEY-----"
-
-typedef enum : NSUInteger {
-    TTRSAKeyTypePublic = 1,
-    TTRSAKeyTypePrivate = 2,
-} TTRSAKeyType;
 
 @interface TTRSA (){
     RSA *_keyPair;
     int _bits;
+    NSString *_publicTag;
+    NSString *_privateTag;
 }
 
 @end
@@ -43,34 +37,29 @@ typedef enum : NSUInteger {
 }
 
 #pragma mark - initialization
-- (instancetype)initWithBits:(int)bits{
+- (instancetype)initWithBits:(int)bits privateTag:(NSString*)privateTag publicTag:(NSString *)publicTag{
     if (self = [super init]) {
         _bits = bits;
+        _publicTag = publicTag;
+        _privateTag = privateTag;
         [self generateRsaKeypair:_bits];
     }
     return self;
 }
 
-- (instancetype)initWithRSAKeyPair:(NSData *)rsaKeyPaireData{
-    if (self = [super init]) {
-        _rsa_keyPaire_data = rsaKeyPaireData;
-    }
-    return self;
+- (instancetype)init{
+    return [self initWithBits:2048 privateTag:@"TTRSA_PRIVATE_TAG" publicTag:@"TTRSA_PUBLIC_TAG"];
 }
 
-- (instancetype)init{
-    if (self = [super init]) {
-        [self generateRsaKeypair:1024];
-
-    }
-    return self;
+- (void)refreshRsaKeyPair{
+    [self generateRsaKeypair:_bits];
 }
 
 #pragma mark - generate
 - (void)generateRsaKeypair:(int)bits{
     
     int ret;
-    unsigned int e = RSA_3;
+    unsigned int e = RSA_F4;
     BIGNUM *bne;
     bne = BN_new();
     ret = BN_set_word(bne, e);
@@ -79,7 +68,9 @@ typedef enum : NSUInteger {
     // generate key pair
     int result = RSA_generate_key_ex(_keyPair, bits,bne, NULL);
     if (result !=1) {
-    
+        char buffer[500];
+        ERR_error_string(ERR_get_error(), buffer);
+        NSLog(@"%@",[NSString stringWithUTF8String:buffer]);
     }
     
     BIO *pri = BIO_new(BIO_s_mem());
@@ -99,45 +90,15 @@ typedef enum : NSUInteger {
     
     pri_key[pri_len] = '\0';
     pub_key[pub_len] = '\0';
-    // generate keypair
-    printf("\n%s\n%s\n", pri_key, pub_key);
     
     
-    const char* priv_k = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEApnHiE8ao2ZtleP0KJLFSPkOVhMUlFNCFKFEEt17KZFjUM3Zh\nhPlahxq038dejBICFDsEHvXZ8T+8UKBDQI6/DAUgparqUqE4gqSiQeGFDhrY8cBi\n7lAD/h7u4FI1+nEbHf7JkfhDz57HZhgf/l6rKNEr7sqkdCJKp2XFqJVzfDs3vnQI\n0NCiVQeJysjTXRzH8VMNv9exV9ZrSasjA57VNaUN9fZnvewqUEvTTzFwXVeV0FDX\nbYUq0cFGMjFB+gCFpaOMSQpQayZEWsdpMTMYTt84VHVZ+aVtBYxdmXk/hilodQsN\niK3dmM54lwvo+8N2M1jQyOlP+QWPWilzPI+h4wIDAQABAoIBAGxQ5lgKSy25o/J1\ncVlpj+T3JGFPzo7aGB2hg9k1Na7R495Npq7bet87MQQEAXJT8chqk4b2ZUtLN+ic\nMsfbXVacK5/EN1NomZbjPrhy45zHOfExSvBdYAvK45dVyMzfOE9v1ItKrg55/Ldi\n8cceonIglV+DvjvZaQ3A/D12bL4l2qlZICTpgjK3yGshEWrdEwIk36LRiefPLCqW\nYE/4TTOHkd80PDX2QmBUtYmBsq0nrUQqr1wFbaiDC3G3wctarNSUJds6Z4KILFOq\nOUZfnmL1cEQfyr7Q9i2ZLDqR+b4PAluE0BEenn0HsaVD4ug17gD/YDHUSz0LhmCq\npu6vB7kCgYEA0uhWrSYc+qjgR+dlWSlaurnEIQMh7oV6y/RXvmwc9aOBHQDjvP7+\ntFcxizC4uMNR6HkPwkWN7wuCnbbKWZqvjuY/jj2jtAqRrBgpRNV3q3UD0Y2fGV2Q\ndiSdXeQfJKV490AKMHlyZ+mHsOJjcODW9F6IuAavVw8X+/pDSnS4oPUCgYEAygf0\nYEtj8Pk1FhawXCLaINyiI9kKam1RTeSdI9vj06zJa92VpQxbWKdDptGmfCwDM5lw\nG+SF6hxmdHKqyvEEjRWXqL2vYWvWRlntl15NRN744mN1nPdelDHF4Hqg4OAe1+sc\nnAdrPelkNlTtYGy+pZm9edFR3J89kwNoFeOHkHcCgYBSKmn6Mur/TGN0H9YAEnhi\nXpTmN440mpPoeVzltsDhgb1/SyVuL/mS0JVgoK6WbKGwa9mT2f0dr+JHBzt2BSl4\nBoOkKqdoMOXnodISGwfwKDpAnWfqPeVV4ZXdSk5HvJ+P08ckc2v6x6QxaUFMbIvR\n0DJ7Xz9YL20soactjqOPMQKBgQCv48cFgv1q0Xw/U9eND6a6j3v2G8Kur6fmWc/Z\nZVpvcnIWH99lx2FLyKvkc4gveR38cWyiTA2uqbUlUqORdc5Rimf0N9iVx43QyABL\nFYXOHRWv+4ls9Ax6lu7ApeKkhVs0/nN1AByE1Uoy5zOXDHXatQO6J9vOaTDxajjX\nPbVLtwKBgDBMlTjPXOJbdiCVe8y+F4MTuykrveGf9MF7MqQU3Mtsaf0w5Jq33gAf\nKhlSpREs3YRXjxEahAoqmPQQGPEpmCpKJaFVKJrgGikmso34sS87IgLCGwwO/H5C\nKPTWKBwkLR7FzYgZdgHQQTpl+2wEe12/IYbMhewRY7mdlrOwXdQT\n-----END RSA PRIVATE KEY-----";
+    _pem_publicKey = [[NSString alloc] initWithCString:(const char*)pub_key encoding:NSUTF8StringEncoding];
+    _pem_privateKey = [[NSString alloc] initWithCString:(const char*)pri_key encoding:NSUTF8StringEncoding];
     
-    const char* pub_k = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApnHiE8ao2ZtleP0KJLFS\nPkOVhMUlFNCFKFEEt17KZFjUM3ZhhPlahxq038dejBICFDsEHvXZ8T+8UKBDQI6/\nDAUgparqUqE4gqSiQeGFDhrY8cBi7lAD/h7u4FI1+nEbHf7JkfhDz57HZhgf/l6r\nKNEr7sqkdCJKp2XFqJVzfDs3vnQI0NCiVQeJysjTXRzH8VMNv9exV9ZrSasjA57V\nNaUN9fZnvewqUEvTTzFwXVeV0FDXbYUq0cFGMjFB+gCFpaOMSQpQayZEWsdpMTMY\nTt84VHVZ+aVtBYxdmXk/hilodQsNiK3dmM54lwvo+8N2M1jQyOlP+QWPWilzPI+h\n4wIDAQAB\n-----END PUBLIC KEY-----";
-    
-    
-    
-    NSString *pubk = [[NSString alloc] initWithCString:(const char*)pub_k encoding:NSUTF8StringEncoding];
-    NSString *prik = [[NSString alloc] initWithCString:(const char*)priv_k encoding:NSUTF8StringEncoding];
-    
-    publicSeckeyRef = [self saveRsaKey:pubk rsaKeyType:TTRSAKeyTypePublic];
-    privateSecKeyRef = [self saveRsaKey:prik rsaKeyType:TTRSAKeyTypePrivate];
-    
-    // sha1
-    NSString *str = @"hello";
-    NSString *sha1 = [pubk sha1ByHex];
-    
-    // sign and verify
-    NSData *cipherData = [self secPrivateSignBytesSHA1: [sha1 hexToBytes] privateKey:privateSecKeyRef];
-    
-    // base64
-    NSString *cipherText = [cipherData base64EncodedStringWithOptions:0];
-    
-    BOOL isVerified =[self secPublicVerifyBytesSHA1:cipherData plainData:[sha1 hexToBytes] publicKey:publicSeckeyRef];
-    
-    NSLog(@"%d",isVerified);
-    
-//    [self secEncryptByPublicKey:publicSeckeyRef plainText:@"123"];
-    NSString *ct = [self rsaEncryptString:@"liuxu123."];
-    NSString *pt = [self rsaDecryptString:ct];
 }
 
-
-- (SecKeyRef)saveRsaKey:(NSString *)keyStr rsaKeyType:(TTRSAKeyType)keyType{
-    
-    NSString * tag = [self tagString4SecKey:keyType];
+#pragma mark - create key
+- (SecKeyRef)createRsaKey:(NSString *)keyStr rsaKeyType:(TTRSAKeyType)keyType{
     
     NSString *s_key = [NSString string];
     NSArray  *a_key = [keyStr componentsSeparatedByString:@"\n"];
@@ -155,11 +116,449 @@ typedef enum : NSUInteger {
     }
     if (s_key.length == 0) return NULL;
     
+    return createRsaKey(s_key,[self tagString4SecKey:keyType],[self secAttrKeyClass:keyType]);
+//    
+//    NSString *s_key = [NSString string];
+//    NSArray  *a_key = [keyStr componentsSeparatedByString:@"\n"];
+//    BOOL     f_key  = FALSE;
+//    
+//    for (NSString *a_line in a_key) {
+//        if ([a_line isEqualToString:[self symbol4Begin:keyType]]) {
+//            f_key = TRUE;
+//        }
+//        else if ([a_line isEqualToString:[self symbol4End:keyType]]) {
+//            f_key = FALSE;
+//        }else if (f_key) {
+//            s_key = [s_key stringByAppendingString:a_line];
+//        }
+//    }
+//    if (s_key.length == 0) return NULL;
+//    
+//    // This will be base64 encoded, decode it.
+//    NSData *d_key = [[NSData alloc] initWithBase64EncodedString:s_key options:0];
+//    if(d_key == nil) return NULL;
+//    
+//    NSData *d_tag = [NSData dataWithBytes:[tag UTF8String] length:[tag length]];
+//    
+//    // Delete any old lingering key with the same tag
+//    NSMutableDictionary *keyConfig = [[NSMutableDictionary alloc] init];
+//    [keyConfig setObject:(id) kSecClassKey forKey:(id)kSecClass];
+//    [keyConfig setObject:(id) kSecAttrKeyTypeRSA forKey:(id)kSecAttrKeyType];
+//    [keyConfig setObject:d_tag forKey:(id)kSecAttrApplicationTag];
+//    SecItemDelete((CFDictionaryRef)keyConfig);
+//    
+//    CFTypeRef persistKey = nil;
+//    
+//    // Add persistent version of the key to system keychain
+//    [keyConfig setObject:d_key forKey:(id)kSecValueData];
+//    [keyConfig setObject:[self secAttrKeyClass:keyType] forKey:(id)
+//     kSecAttrKeyClass];
+//    [keyConfig setObject:[NSNumber numberWithBool:YES] forKey:(id)
+//     kSecReturnPersistentRef];
+//    
+//    OSStatus secStatus = SecItemAdd((CFDictionaryRef)keyConfig, &persistKey);
+//    if (persistKey != nil) CFRelease(persistKey);
+//    
+//    if ((secStatus != noErr) && (secStatus != errSecDuplicateItem)) {
+//        //        [privateKey release];
+//        return NULL;
+//    }
+//    
+//    // Now fetch the SecKeyRef version of the key
+//    SecKeyRef keyRef = nil;
+//    
+//    [keyConfig removeObjectForKey:(id)kSecValueData];
+//    [keyConfig removeObjectForKey:(id)kSecReturnPersistentRef];
+//    [keyConfig setObject:[NSNumber numberWithBool:YES] forKey:(id)kSecReturnRef];
+//    secStatus = SecItemCopyMatching((CFDictionaryRef)keyConfig,
+//                                    (CFTypeRef *)&keyRef);
+//    
+//    if(secStatus != noErr)
+//        return NULL;
+//    return keyRef;
+}
+
+#pragma mark - sign
+- (NSData*)signPKCS1PlainData:(NSData *)plainData{
+    
+    [self loadPrivateKey];
+    
+    // set plain data size by CC_SHA1_DIGEST_LENGTH
+    size_t plainhashBytesSize = CC_SHA1_DIGEST_LENGTH;
+    
+    return secKeySignByPrivateKey(privateSecKeyRef, plainData, plainhashBytesSize,kSecPaddingPKCS1);
+}
+
+- (NSData*)signPKCS1SHA1PlainData:(NSData *)plainData{
+    
+    [self loadPrivateKey];
+    
+    // set plain data size by CC_SHA1_DIGEST_LENGTH
+    size_t plainhashBytesSize = CC_SHA1_DIGEST_LENGTH;
+    // create plainSha1Bytes
+    uint8_t *plainSha1Bytes = malloc(CC_SHA1_DIGEST_LENGTH);
+    // plainData to plain sha1 Bytes
+    unsigned char *status =CC_SHA1([plainData bytes], (CC_LONG)[plainData length], plainSha1Bytes);
+    NSAssert(status != NULL,@"plain data fail encrypt by sha1! Method: -[TTRSA signPKCS1SHA1ByPrivateKey]");
+    //  plain sha1 Bytes to plain sha1 data
+    NSData *plainSha1Data = [NSData dataWithBytes:plainSha1Bytes
+                                           length:(NSUInteger)plainhashBytesSize];
+    // sign
+    return secKeySignByPrivateKey(privateSecKeyRef, plainSha1Data, plainhashBytesSize, kSecPaddingPKCS1SHA1);
+}
+
+- (NSData*)signPKCS1SHA256PlainData:(NSData *)plainData{
+    
+    [self loadPrivateKey];
+    
+    // set plain data size by CC_SHA256_DIGEST_LENGTH
+    size_t plainhashBytesSize = CC_SHA256_DIGEST_LENGTH;
+    // create plainSha256Bytes
+    uint8_t *plainSha256Bytes = malloc(CC_SHA256_DIGEST_LENGTH);
+    // plainData to plain sha256 Bytes
+    unsigned char *status =CC_SHA256([plainData bytes], (CC_LONG)[plainData length], plainSha256Bytes);
+    NSAssert(status != NULL,@"plain data fail encrypt by sha1! Method: -[TTRSA signPKCS1SHA1ByPrivateKey]");
+    //  plain sha256 Bytes to plain sha256 data
+    NSData *plainSha1Data = [NSData dataWithBytes:plainSha256Bytes
+                                           length:(NSUInteger)plainhashBytesSize];
+    // sign
+    return secKeySignByPrivateKey(privateSecKeyRef, plainSha1Data, plainhashBytesSize, kSecPaddingPKCS1SHA256);
+}
+
+//- (NSData *)secKeySignByPrivateKey:(SecKeyRef)privateKey plainData:(NSData *)plainData plainHashBytesSize:(size_t)plainBytesSize secPadding:(SecPadding)secPadding{
+//    
+//    // get will be signed data by privateKey size
+//    size_t signedHashBytesSize = SecKeyGetBlockSize(privateKey);
+//    // allocate memry
+//    uint8_t *signedHashBytes = malloc(signedHashBytesSize);
+//    // initializ signedHashBytes memry
+//    memset(signedHashBytes, 0x0, signedHashBytesSize);
+//    
+//    // sign
+//    OSStatus status = SecKeyRawSign(privateKey,
+//                                    secPadding,
+//                                    [plainData bytes],
+//                                    plainBytesSize,
+//                                    signedHashBytes,
+//                                    &signedHashBytesSize);
+//    if (status!=0) {
+//        char buffer[512];
+//        ERR_error_string(ERR_get_error(), buffer);
+//    }
+//    
+//    // convert signedBytes to NSData
+//    NSData *signedData = [NSData dataWithBytes:signedHashBytes
+//                                        length:(NSUInteger)signedHashBytesSize];
+//    // release unuseable C object
+//    if (signedHashBytes)
+//        free(signedHashBytes);
+//    
+//    return signedData;
+//}
+
+#pragma mark - verify
+- (BOOL)verifyPKCS1SignedData:(NSData *)signedData plainData:(NSData *)plainData{
+    
+    [self loadPublicKey];
+    
+    size_t plainBytesSize = CC_SHA1_DIGEST_LENGTH;
+    
+    // verify
+    return secKeyVerifyByPublicKey(publicSeckeyRef, signedData, plainData, plainBytesSize, kSecPaddingPKCS1);
+}
+
+- (BOOL)verifyPKCS1SHA1SignedData:(NSData *)signedData plainData:(NSData *)plainData{
+    
+    [self loadPublicKey];
+    
+    // get plainSha1BytesSize
+    size_t plainSha1BytesSize = CC_SHA1_DIGEST_LENGTH;
+    // create plainSha1Bytes
+    uint8_t* plainSha1Bytes = malloc(plainSha1BytesSize);
+    //  plainBytes to plainSha1Bytes
+    unsigned char *status = CC_SHA1([plainData bytes], (CC_LONG)[plainData length], plainSha1Bytes);
+    NSAssert(status != NULL,@"plain data fail encrypt by sha1! Method: -[TTRSA verifyPKCS1SHA1ByPublicKey:]");
+    
+    // get plainSha1Data from plainSha1Bytes
+    NSData *plainSha1Data = [NSData dataWithBytes:plainSha1Bytes
+                                           length:(NSUInteger)plainSha1BytesSize];;
+    
+    // verify
+    return secKeyVerifyByPublicKey(publicSeckeyRef, signedData, plainSha1Data, plainSha1BytesSize, kSecPaddingPKCS1SHA1);
+}
+
+- (BOOL)verifyPKCS1SHA256SignedData:(NSData *)signedData plainData:(NSData *)plainData{
+    
+    [self loadPublicKey];
+    
+    // get plainSha1BytesSize
+    size_t plainSha256BytesSize = CC_SHA256_DIGEST_LENGTH;
+    // create plainSha1Bytes
+    uint8_t* plainSha256Bytes = malloc(plainSha256BytesSize);
+    //  plainBytes to plainSha1Bytes
+    if (!CC_SHA256([plainData bytes], (CC_LONG)[plainData length], plainSha256Bytes)) {
+        return nil;
+    }
+    // get plainSha1Data from plainSha1Bytes
+    NSData *plainSha256Data = [NSData dataWithBytes:plainSha256Bytes
+                                             length:(NSUInteger)plainSha256BytesSize];;
+    
+    // verify
+    return secKeyVerifyByPublicKey(publicSeckeyRef, signedData, plainSha256Data, plainSha256BytesSize, kSecPaddingPKCS1SHA256);
+}
+
+//- (BOOL)secKeyVerifyByPublicKey:(SecKeyRef)publicKey signedData:(NSData *)signedData plainData:(NSData *)plainData plainHashBytesSize:(size_t)plainBytesSize secPadding:(SecPadding)secPadding{
+//    
+//    // get signed data bytes Size by public key
+//    size_t signedHashBytesSize = SecKeyGetBlockSize(publicKey);
+//    // signed data to bytes
+//    const void* signedHashBytes = [signedData bytes];
+//    
+//    // verify
+//    OSStatus status = SecKeyRawVerify(publicKey,
+//                                      secPadding,
+//                                      [plainData bytes],
+//                                      plainBytesSize,
+//                                      signedHashBytes,
+//                                      signedHashBytesSize);
+//    if (status != 0) {
+//        char buffer[512];
+//        ERR_error_string(ERR_get_error(), buffer);
+//    }
+//    
+//    return (status == 0);
+//}
+
+#pragma mark - encrypt
+- (NSString*)encryptPKCS1PlainText:(NSString*)plainText{
+    
+    [self loadPublicKey];
+    
+    NSData* plainData = [plainText dataUsingEncoding:NSUTF8StringEncoding];
+    
+    NSData* encryptedData = secEncryptByPublicKey(publicSeckeyRef,plainData, kSecPaddingPKCS1);
+    
+    NSString* base64EncryptedString = [encryptedData base64EncodedStringWithOptions:0];
+    
+    return base64EncryptedString;
+}
+
+//// 加密的大小受限于SecKeyEncrypt函数，SecKeyEncrypt要求明文和密钥的长度一致，如果要加密更长的内容，需要把内容按密钥长度分成多份，然后多次调用SecKeyEncrypt来实现
+//- (NSData*)secEncryptByPublicKey:(SecKeyRef)publicKey plainData:(NSData*)plainData secPadding:(SecPadding)secPadding{
+//    
+//    size_t cipherBufferSize = SecKeyGetBlockSize(publicKey);
+//    uint8_t *cipherBuffer = malloc(cipherBufferSize * sizeof(uint8_t));
+//    size_t blockSize = cipherBufferSize - 11;       // 分段加密
+//    size_t blockCount = (size_t)ceil([plainData length] / (double)blockSize);
+//    NSMutableData *encryptedData = [[NSMutableData alloc] init] ;
+//    for (int i=0; i<blockCount; i++) {
+//        int bufferSize = (int)MIN(blockSize,[plainData length] - i * blockSize);
+//        NSData *buffer = [plainData subdataWithRange:NSMakeRange(i * blockSize, bufferSize)];
+//        OSStatus status = SecKeyEncrypt(publicKey, secPadding, (const uint8_t *)[buffer bytes], [buffer length], cipherBuffer, &cipherBufferSize);
+//        if (status == noErr){
+//            NSData *encryptedBytes = [[NSData alloc] initWithBytes:(const void *)cipherBuffer length:cipherBufferSize];
+//            [encryptedData appendData:encryptedBytes];
+//        }else{
+//            if (cipherBuffer) {
+//                free(cipherBuffer);
+//            }
+//            char buffer[512];
+//            ERR_error_string_n(ERR_get_error(), buffer, 512);
+//            return nil;
+//        }
+//    }
+//    
+//    if (cipherBuffer){
+//        free(cipherBuffer);
+//    }
+//    
+//    return encryptedData;
+//}
+
+#pragma mark - Decrypt
+- (NSString*)decryptPKCS1CipherText:(NSString*)cipherText{
+    
+    [self loadPrivateKey];
+    
+    NSData* cipherData = [[NSData alloc] initWithBase64EncodedString:cipherText options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    
+    NSData* decryptData = secDecryptByPrivateKey(privateSecKeyRef, cipherData,kSecPaddingPKCS1);
+    
+    NSString* result = [[NSString alloc] initWithData: decryptData encoding:NSUTF8StringEncoding];
+    return result;
+}
+
+//- (NSData*)secDecryptByPrivateKey:(SecKeyRef)privateKey cipherData:(NSData*)cipherData secPadding:(SecPadding)secPadding{
+//    
+//    size_t cipherLen = [cipherData length];
+//    void *cipher = malloc(cipherLen);
+//    [cipherData getBytes:cipher length:cipherLen];
+//    size_t plainLen = SecKeyGetBlockSize(privateKey) - 12;
+//    void *plain = malloc(plainLen);
+//    
+//    // decrypt
+//    OSStatus status = SecKeyDecrypt(privateKey, secPadding, cipher, cipherLen, plain, &plainLen);
+//    
+//    if (status != noErr) {
+//        char buffer[512];
+//        ERR_error_string(ERR_get_error(), buffer);
+//        
+//        return nil;
+//    }
+//    
+//    NSData *decryptedData = [[NSData alloc] initWithBytes:(const void *)plain length:plainLen];
+//    
+//    return decryptedData;
+//}
+
+#pragma mark - converter
+- (NSString *)tagString4SecKey:(TTRSAKeyType)type{
+    return type == TTRSAKeyTypePublic ? _publicTag : _privateTag;
+}
+
+- (NSString *)symbol4Begin:(TTRSAKeyType)type{
+    return type == TTRSAKeyTypePublic ? kPublicKeyBegin : kPrivateKeyBegin;
+}
+
+- (NSString *)symbol4End:(TTRSAKeyType)type{
+    return type == TTRSAKeyTypePublic ? kPublicKeyEnd : kPrivateKeyEnd;
+}
+
+- (id)secAttrKeyClass:(TTRSAKeyType)type{
+    return type == TTRSAKeyTypePublic ? (id)kSecAttrKeyClassPublic:(id)kSecAttrKeyClassPrivate;
+}
+
+#pragma mark - loader
+- (void)loadPublicKey{
+    if (!publicSeckeyRef) {
+        publicSeckeyRef = [self createRsaKey:_pem_publicKey rsaKeyType:TTRSAKeyTypePublic];
+    }
+}
+
+- (void)loadPrivateKey{
+    if (!privateSecKeyRef) {
+        privateSecKeyRef = [self createRsaKey:_pem_privateKey rsaKeyType:TTRSAKeyTypePrivate];
+    }
+}
+
+#pragma mark - convenient
+// sign
++ (NSData*)signPKCS1PrivateTag:(NSString*)privateTag privateKey:(NSString*)privateKey plainData:(NSData *)plainData{
+    NSString *s_key = [NSString string];
+    NSArray  *a_key = [privateKey componentsSeparatedByString:@"\n"];
+    BOOL     f_key  = FALSE;
+    
+    for (NSString *a_line in a_key) {
+        if ([a_line isEqualToString:kPrivateKeyBegin]) {
+            f_key = TRUE;
+        }
+        else if ([a_line isEqualToString:kPrivateKeyEnd]) {
+            f_key = FALSE;
+        }else if (f_key) {
+            s_key = [s_key stringByAppendingString:a_line];
+        }
+    }
+    if (s_key.length == 0) return NULL;
+    
+    SecKeyRef privateSecKeyRef = createRsaKey(s_key,privateTag,(id)kSecAttrKeyClassPrivate);
+
+    // set plain data size by CC_SHA1_DIGEST_LENGTH
+    size_t plainhashBytesSize = CC_SHA1_DIGEST_LENGTH;
+    
+    return secKeySignByPrivateKey(privateSecKeyRef, plainData, plainhashBytesSize,kSecPaddingPKCS1);
+}
+// verify
++ (BOOL)verifyPKCS1PublicTag:(NSString*)publicTag publicKey:(NSString*)publicKey plainData:(NSData *)plainData signedData:(NSData *)signedData{
+    NSString *s_key = [NSString string];
+    NSArray  *a_key = [publicKey componentsSeparatedByString:@"\n"];
+    BOOL     f_key  = FALSE;
+    
+    for (NSString *a_line in a_key) {
+        if ([a_line isEqualToString:kPublicKeyBegin]) {
+            f_key = TRUE;
+        }
+        else if ([a_line isEqualToString:kPublicKeyEnd]) {
+            f_key = FALSE;
+        }else if (f_key) {
+            s_key = [s_key stringByAppendingString:a_line];
+        }
+    }
+    if (s_key.length == 0) return NULL;
+    
+    SecKeyRef publicSecKeyRef = createRsaKey(s_key,publicTag,(id)kSecAttrKeyClassPublic);
+    
+    // set plain data size by CC_SHA1_DIGEST_LENGTH
+    size_t plainBytesSize = CC_SHA1_DIGEST_LENGTH;
+    
+    // verify
+    return secKeyVerifyByPublicKey(publicSecKeyRef, signedData, plainData, plainBytesSize, kSecPaddingPKCS1);
+}
+// encrypt
++ (NSString *)encryptPKCS1PublicTag:(NSString*)publicTag publicKey:(NSString*)publicKey plainText:(NSString *)plainText{
+    
+    NSString *s_key = [NSString string];
+    NSArray  *a_key = [publicKey componentsSeparatedByString:@"\n"];
+    BOOL     f_key  = FALSE;
+    
+    for (NSString *a_line in a_key) {
+        if ([a_line isEqualToString:kPublicKeyBegin]) {
+            f_key = TRUE;
+        }
+        else if ([a_line isEqualToString:kPublicKeyEnd]) {
+            f_key = FALSE;
+        }else if (f_key) {
+            s_key = [s_key stringByAppendingString:a_line];
+        }
+    }
+    if (s_key.length == 0) return NULL;
+    
+    SecKeyRef publicSecKeyRef = createRsaKey(s_key,publicTag,(id)kSecAttrKeyClassPublic);
+    
+    NSData* plainData = [plainText dataUsingEncoding:NSUTF8StringEncoding];
+    
+    NSData* encryptedData = secEncryptByPublicKey(publicSecKeyRef,plainData, kSecPaddingPKCS1);
+    
+    NSString* base64EncryptedString = [encryptedData base64EncodedStringWithOptions:0];
+    
+    return base64EncryptedString;
+}
+// decrypt
++ (NSString *)decryptPKCS1PrivateTag:(NSString*)privateTag privateKey:(NSString*)privateKey cipherText:(NSString *)cipherText
+{
+    NSString *s_key = [NSString string];
+    NSArray  *a_key = [privateKey componentsSeparatedByString:@"\n"];
+    BOOL     f_key  = FALSE;
+    
+    for (NSString *a_line in a_key) {
+        if ([a_line isEqualToString:kPrivateKeyBegin]) {
+            f_key = TRUE;
+        }
+        else if ([a_line isEqualToString:kPrivateKeyEnd]) {
+            f_key = FALSE;
+        }else if (f_key) {
+            s_key = [s_key stringByAppendingString:a_line];
+        }
+    }
+    if (s_key.length == 0) return NULL;
+    
+    SecKeyRef privateSecKeyRef = createRsaKey(s_key,privateTag,(id)kSecAttrKeyClassPrivate);
+    
+    NSData* cipherData = [[NSData alloc] initWithBase64EncodedString:cipherText options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    
+    NSData* decryptData = secDecryptByPrivateKey(privateSecKeyRef, cipherData,kSecPaddingPKCS1);
+    
+    NSString* result = [[NSString alloc] initWithData: decryptData encoding:NSUTF8StringEncoding];
+    return result;
+}
+
+#pragma mark - function
+SecKeyRef createRsaKey(NSString *keyStr, NSString * keyTag, id secAttrKeyClass){
+    
     // This will be base64 encoded, decode it.
-    NSData *d_key = [[NSData alloc] initWithBase64EncodedString:s_key options:0];
+    NSData *d_key = [[NSData alloc] initWithBase64EncodedString:keyStr options:0];
     if(d_key == nil) return NULL;
     
-    NSData *d_tag = [NSData dataWithBytes:[tag UTF8String] length:[tag length]];
+    NSData *d_tag = [NSData dataWithBytes:[keyTag UTF8String] length:[keyTag length]];
     
     // Delete any old lingering key with the same tag
     NSMutableDictionary *keyConfig = [[NSMutableDictionary alloc] init];
@@ -172,7 +571,7 @@ typedef enum : NSUInteger {
     
     // Add persistent version of the key to system keychain
     [keyConfig setObject:d_key forKey:(id)kSecValueData];
-    [keyConfig setObject:[self secAttrKeyClass:keyType] forKey:(id)
+    [keyConfig setObject:secAttrKeyClass forKey:(id)
      kSecAttrKeyClass];
     [keyConfig setObject:[NSNumber numberWithBool:YES] forKey:(id)
      kSecReturnPersistentRef];
@@ -199,171 +598,71 @@ typedef enum : NSUInteger {
     return keyRef;
 }
 
-
-- (NSString *)tagString4SecKey:(TTRSAKeyType)type{
-    return type == TTRSAKeyTypePublic ? kSecPublicKeyTag : kSecPrivateKeyTag;
-}
-
-- (NSString *)symbol4Begin:(TTRSAKeyType)type{
-    return type == TTRSAKeyTypePublic ? kPublicKeyBegin : kPrivateKeyBegin;
-}
-
-- (NSString *)symbol4End:(TTRSAKeyType)type{
-    return type == TTRSAKeyTypePublic ? kPublicKeyEnd : kPrivateKeyEnd;
-}
-
-- (id)secAttrKeyClass:(TTRSAKeyType)type{
-    return type == TTRSAKeyTypePublic ? (id)kSecAttrKeyClassPublic:(id)kSecAttrKeyClassPrivate;
-}
-
-#pragma mark - sign and unsign
-- (NSData*)secPrivateSignBytesSHA1:(NSData *)plainData privateKey:(SecKeyRef)privateKey{
+NSData * secKeySignByPrivateKey(SecKeyRef privateKey, NSData *plainData, size_t plainBytesSize, SecPadding secPadding){
     
+    // get will be signed data by privateKey size
     size_t signedHashBytesSize = SecKeyGetBlockSize(privateKey);
-    uint8_t* signedHashBytes = malloc(signedHashBytesSize);
+    // allocate memry
+    uint8_t *signedHashBytes = malloc(signedHashBytesSize);
+    // initializ signedHashBytes memry
     memset(signedHashBytes, 0x0, signedHashBytesSize);
     
-    size_t hashBytesSize = CC_SHA1_DIGEST_LENGTH;
-    uint8_t* hashBytes = malloc(hashBytesSize);
-    if (!CC_SHA1([plainData bytes], (CC_LONG)[plainData length], hashBytes)) {
-        return nil;
+    // sign
+    OSStatus status = SecKeyRawSign(privateKey,
+                                    secPadding,
+                                    [plainData bytes],
+                                    plainBytesSize,
+                                    signedHashBytes,
+                                    &signedHashBytesSize);
+    if (status!=0) {
+        char buffer[512];
+        ERR_error_string(ERR_get_error(), buffer);
     }
     
-    SecKeyRawSign(privateKey,
-                  kSecPaddingPKCS1,
-                  hashBytes,
-                  hashBytesSize,
-                  signedHashBytes,
-                  &signedHashBytesSize);
-    
-    NSData* signedHash = [NSData dataWithBytes:signedHashBytes
+    // convert signedBytes to NSData
+    NSData *signedData = [NSData dataWithBytes:signedHashBytes
                                         length:(NSUInteger)signedHashBytesSize];
-    
-    if (hashBytes)
-        free(hashBytes);
+    // release unuseable C object
     if (signedHashBytes)
         free(signedHashBytes);
     
-    return signedHash;
+    return signedData;
 }
 
-- (BOOL)secPublicVerifyBytesSHA1:(NSData *)signatureData plainData:(NSData *)plainData publicKey:(SecKeyRef)publicKey{
+BOOL secKeyVerifyByPublicKey(SecKeyRef publicKey, NSData *signedData, NSData *plainData, size_t plainBytesSize, SecPadding secPadding){
     
+    // get signed data bytes Size by public key
     size_t signedHashBytesSize = SecKeyGetBlockSize(publicKey);
-    const void* signedHashBytes = [signatureData bytes];
+    // signed data to bytes
+    const void* signedHashBytes = [signedData bytes];
     
-    size_t hashBytesSize = CC_SHA1_DIGEST_LENGTH;
-    uint8_t* hashBytes = malloc(hashBytesSize);
-    if (!CC_SHA1([plainData bytes], (CC_LONG)[plainData length], hashBytes)) {
-        return nil;
-    }
-    
+    // verify
     OSStatus status = SecKeyRawVerify(publicKey,
-                                      kSecPaddingPKCS1,
-                                      hashBytes,
-                                      hashBytesSize,
+                                      secPadding,
+                                      [plainData bytes],
+                                      plainBytesSize,
                                       signedHashBytes,
                                       signedHashBytesSize);
-  
+    if (status != 0) {
+        char buffer[512];
+        ERR_error_string(ERR_get_error(), buffer);
+    }
+    
     return (status == 0);
 }
-#pragma mark - encrypt
 
-- (NSData *)secEncryptByPublicKey:(SecKeyRef)publicKey plainText:(NSString *)plainText{
-    
-    NSLog(@"== encryptWithPublicKey()");
-    
-    OSStatus status = noErr;
-    uint8_t *plainBuffer;
-    uint8_t *cipherBuffer;
-    plainBuffer = (uint8_t *)calloc(64, sizeof(uint8_t));
-    cipherBuffer = (uint8_t *)calloc(1024, sizeof(uint8_t));
-    
-    strncpy((char *)plainBuffer, [plainText UTF8String], strlen([plainText UTF8String]));
-
-    [self encryptByPublicKey:publicKey plainBuffer:plainBuffer cipherBuffer:cipherBuffer];
-    
-    return nil;
-}
-
-- (void)encryptByPublicKey:(SecKeyRef)publicKey plainBuffer:(uint8_t *)plainBuffer cipherBuffer:(uint8_t *)cipherBuffer
-{
-    
-    NSLog(@"== encryptWithPublicKey()");
-    
-    OSStatus status = noErr;
-    
-    NSLog(@"** original plain text 0: %s", plainBuffer);
-    
-    size_t plainBufferSize = strlen((char *)plainBuffer);
-    size_t cipherBufferSize = 1024;
-    
-    NSLog(@"SecKeyGetBlockSize() public = %lu", SecKeyGetBlockSize(publicKey));
-    //  Error handling
-    // Encrypt using the public.
-    status = SecKeyEncrypt(publicKey,
-                           kSecPaddingPKCS1,
-                           plainBuffer,
-                           plainBufferSize,
-                           &cipherBuffer[0],
-                           &cipherBufferSize
-                           );
-    NSLog(@"encryption result code: %ld (size: %lu)", status, cipherBufferSize);
-    NSLog(@"encrypted text: %s", cipherBuffer);
-    
-    NSData *decryptedData = [NSData dataWithBytes:cipherBuffer length:cipherBufferSize];
-    NSString *decryptedString1 = [[NSString alloc] initWithData:decryptedData encoding:NSUTF8StringEncoding];
-    NSString *decryptedString = [decryptedData base64EncodedStringWithOptions:0];
-    
-    uint8_t *pBuffer = (uint8_t *)calloc(1024, sizeof(uint8_t));
-
-    
-    [self decryptWithPrivateKey:cipherBuffer plainBuffer:pBuffer];
-    
-}
-
-- (void)decryptWithPrivateKey:(uint8_t *)cipherBuffer plainBuffer:(uint8_t *)plainBuffer
-{
-    OSStatus status = noErr;
-    
-    size_t cipherBufferSize = strlen((char *)cipherBuffer);
-    
-    
-    // DECRYPTION
-    size_t plainBufferSize = 1024;
-    
-    //  Error handling
-    status = SecKeyDecrypt(privateSecKeyRef,
-                           kSecPaddingPKCS1,
-                           &cipherBuffer[0],
-                           cipherBufferSize,
-                           &plainBuffer[0],
-                           &plainBufferSize
-                           );
-    NSData *decryptedData = [NSData dataWithBytes:plainBuffer length:plainBufferSize];
-    NSString *decryptedString = [[NSString alloc] initWithData:decryptedData encoding:NSUTF8StringEncoding];
-}
-
-
-
--(NSString*) rsaEncryptString:(NSString*)string {
-    NSData* data = [string dataUsingEncoding:NSUTF8StringEncoding];
-    NSData* encryptedData = [self rsaEncryptData: data];
-    NSString* base64EncryptedString = [encryptedData base64EncodedStringWithOptions:0];
-    return base64EncryptedString;
-}
 // 加密的大小受限于SecKeyEncrypt函数，SecKeyEncrypt要求明文和密钥的长度一致，如果要加密更长的内容，需要把内容按密钥长度分成多份，然后多次调用SecKeyEncrypt来实现
--(NSData*) rsaEncryptData:(NSData*)data {
-    SecKeyRef key = publicSeckeyRef;
-    size_t cipherBufferSize = SecKeyGetBlockSize(key);
+NSData * secEncryptByPublicKey(SecKeyRef publicKey, NSData * plainData, SecPadding secPadding){
+    
+    size_t cipherBufferSize = SecKeyGetBlockSize(publicKey);
     uint8_t *cipherBuffer = malloc(cipherBufferSize * sizeof(uint8_t));
     size_t blockSize = cipherBufferSize - 11;       // 分段加密
-    size_t blockCount = (size_t)ceil([data length] / (double)blockSize);
+    size_t blockCount = (size_t)ceil([plainData length] / (double)blockSize);
     NSMutableData *encryptedData = [[NSMutableData alloc] init] ;
     for (int i=0; i<blockCount; i++) {
-        int bufferSize = (int)MIN(blockSize,[data length] - i * blockSize);
-        NSData *buffer = [data subdataWithRange:NSMakeRange(i * blockSize, bufferSize)];
-        OSStatus status = SecKeyEncrypt(key, kSecPaddingPKCS1, (const uint8_t *)[buffer bytes], [buffer length], cipherBuffer, &cipherBufferSize);
+        int bufferSize = (int)MIN(blockSize,[plainData length] - i * blockSize);
+        NSData *buffer = [plainData subdataWithRange:NSMakeRange(i * blockSize, bufferSize)];
+        OSStatus status = SecKeyEncrypt(publicKey, secPadding, (const uint8_t *)[buffer bytes], [buffer length], cipherBuffer, &cipherBufferSize);
         if (status == noErr){
             NSData *encryptedBytes = [[NSData alloc] initWithBytes:(const void *)cipherBuffer length:cipherBufferSize];
             [encryptedData appendData:encryptedBytes];
@@ -371,38 +670,34 @@ typedef enum : NSUInteger {
             if (cipherBuffer) {
                 free(cipherBuffer);
             }
+            char buffer[512];
+            ERR_error_string_n(ERR_get_error(), buffer, 512);
             return nil;
         }
     }
+    
     if (cipherBuffer){
         free(cipherBuffer);
     }
+    
     return encryptedData;
 }
 
-
-
-
-#pragma mark - Decrypt
-
--(NSString*) rsaDecryptString:(NSString*)string {
+NSData * secDecryptByPrivateKey(SecKeyRef privateKey, NSData *cipherData,SecPadding secPadding){
     
-    NSData* data = [[NSData alloc] initWithBase64EncodedString:string options:NSDataBase64DecodingIgnoreUnknownCharacters];
-    NSData* decryptData = [self rsaDecryptData: data];
-    NSString* result = [[NSString alloc] initWithData: decryptData encoding:NSUTF8StringEncoding];
-    return result;
-}
-
--(NSData*) rsaDecryptData:(NSData*)data {
-    SecKeyRef key = privateSecKeyRef;
-    size_t cipherLen = [data length];
+    size_t cipherLen = [cipherData length];
     void *cipher = malloc(cipherLen);
-    [data getBytes:cipher length:cipherLen];
-    size_t plainLen = SecKeyGetBlockSize(key) - 12;
+    [cipherData getBytes:cipher length:cipherLen];
+    size_t plainLen = SecKeyGetBlockSize(privateKey) - 12;
     void *plain = malloc(plainLen);
-    OSStatus status = SecKeyDecrypt(key, kSecPaddingPKCS1, cipher, cipherLen, plain, &plainLen);
+    
+    // decrypt
+    OSStatus status = SecKeyDecrypt(privateKey, secPadding, cipher, cipherLen, plain, &plainLen);
     
     if (status != noErr) {
+        char buffer[512];
+        ERR_error_string(ERR_get_error(), buffer);
+        
         return nil;
     }
     
@@ -415,298 +710,3 @@ typedef enum : NSUInteger {
 
 
 
-
-
-
-
-
-
-
-
-
-//
-//static int padding = RSA_PKCS1_PADDING;
-//
-//- (unsigned char *)publicKeyEncrypt:(NSString *)message key:(unsigned char *)key{
-//    
-//    RSA *rsa = [self createRSA:key public:1];
-//    
-//    const char *msgInChar = [message UTF8String];
-//    unsigned char  encrypted[4028] = {}; //I'm not so sure about this size
-//    int bufferSize = RSA_public_encrypt(strlen(msgInChar), (unsigned char *)msgInChar, encrypted, rsa, RSA_PKCS1_PADDING);
-//    if (bufferSize == -1) {
-//        NSLog(@"Encryption failed");
-//    }
-//    
-//    NSString *encrypteds = [[NSString alloc] initWithCString:(const char*)encrypted encoding:NSASCIIStringEncoding];
-//    
-//    NSData *data = [NSData dataWithBytes:(const void *)encrypted length:strlen(encrypted)]; //I'm not so sure about this length
-//    
-//    NSString *r = [data base64EncodedStringWithOptions:0];
-//    NSString *result = [self encodeBase64WithData:data];
-//    
-//    return encrypted;
-//}
-//
-//- (void)pivateKeyDecrypt:(unsigned char *)message key:(unsigned char*)key{
-//    
-//    RSA *rsa = [self createRSA:key public:0];
-//    
-//    //    const char *msgInChar = [message UTF8String];
-//    unsigned char  encrypted[4028] = {}; //I'm not so sure about this size
-//    int bufferSize = RSA_private_decrypt(strlen(message), (unsigned char *)message, encrypted, rsa, RSA_PKCS1_PADDING);
-//    if (bufferSize == -1) {
-//        char buffer[500];
-//        ERR_error_string(ERR_get_error(), buffer);
-//        NSLog(@"%@",[NSString stringWithUTF8String:buffer]);
-//        NSLog(@"Encryption failed");
-//    }
-//    
-//    NSData *data = [NSData dataWithBytes:(const void *)encrypted length:strlen(encrypted)]; //I'm not so sure about this length
-//    
-//    NSString *r = [data base64EncodedStringWithOptions:0];
-//    NSString *result = [self encodeBase64WithData:data];
-//    
-//}
-//
-////int public_encrypt(unsigned char * data,int data_len,unsigned char * key, unsigned char *encrypted)
-////{
-////    RSA * rsa = createRSA(key,1);
-////    int result = RSA_public_encrypt(data_len,data,encrypted,rsa,padding);
-////    return result;
-////}
-////int private_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, unsigned char *decrypted)
-////{
-////    RSA * rsa = createRSA(key,0);
-////    int  result = RSA_private_decrypt(data_len,enc_data,decrypted,rsa,padding);
-////    return result;
-////}
-////
-////
-////int private_encrypt(unsigned char * data,int data_len,unsigned char * key, unsigned char *encrypted)
-////{
-////    RSA * rsa = createRSA(key,0);
-////    int result = RSA_private_encrypt(data_len,data,encrypted,rsa,padding);
-////    return result;
-////}
-////int public_decrypt(unsigned char * enc_data,int data_len,unsigned char * key, unsigned char *decrypted)
-////{
-////    RSA * rsa = createRSA(key,1);
-////    int  result = RSA_public_decrypt(data_len,enc_data,decrypted,rsa,padding);
-////    return result;
-////}
-////
-//- (void)printLastError:(char *)msg
-//{
-//    
-//    char * err = malloc(130);;
-//    ERR_load_crypto_strings();
-//    ERR_error_string(ERR_get_error(), err);
-//    printf("%s ERROR: %s\n",msg, err);
-//    free(err);
-//}
-//
-//
-//#pragma mark - rsa data converte
-//- (void)converteData2Rsa{
-//    [_rsa_keyPaire_data getBytes:&_keyPair length:sizeof(_keyPair)];
-//}
-//
-//- (void)converteRsa2Data{
-//    _rsa_keyPaire_data = [NSData dataWithBytes:&_keyPair length:sizeof(_keyPair)];
-//}
-//
-//
-//- (RSA *)createRSA:(unsigned char *) key public:(int) public
-//{
-//    RSA *rsa= RSA_new();
-//    BIO *keybio ;
-//    keybio = BIO_new_mem_buf(key, -1);
-//    if (keybio==NULL)
-//    {
-//        printf( "Failed to create key BIO");
-//        return 0;
-//    }
-//    if(public)
-//    {
-//        
-//        PEM_read_bio_RSAPublicKey(keybio, &rsa, NULL, NULL);
-//        if (rsa == NULL)
-//        {
-//            char buffer[500];
-//            ERR_error_string(ERR_get_error(), buffer);
-//            NSLog(@"%@",[NSString stringWithUTF8String:buffer]);
-//        }
-//        
-//        //        rsa = PEM_read_bio_RSA_PUBKEY(keybio, &rsa,NULL, NULL);
-//        //        if (rsa == NULL)
-//        //        {
-//        //            char buffer[500];
-//        //            ERR_error_string(ERR_get_error(), buffer);
-//        //
-//        //            [self printLastError:buffer];
-//        //        }
-//        
-//        
-//    }
-//    else
-//    {
-//        rsa = PEM_read_bio_RSAPrivateKey(keybio, &rsa,NULL, NULL);
-//        if (rsa == NULL)
-//        {
-//            char buffer[500];
-//            ERR_error_string(ERR_get_error(), buffer);
-//            NSLog(@"%@",[NSString stringWithUTF8String:buffer]);
-//        }
-//        
-//    }
-//    if(rsa == NULL)
-//    {
-//        printf( "Failed to create RSA");
-//    }
-//    
-//    return rsa;
-//}
-//
-//
-//- (NSString *)encodeBase64WithData:(NSData *)objData {
-//    const unsigned char * objRawData = [objData bytes];
-//    char * objPointer;
-//    char * strResult;
-//    
-//    // Get the Raw Data length and ensure we actually have data
-//    size_t intLength = [objData length];
-//    if (intLength == 0) return nil;
-//    
-//    // Setup the String-based Result placeholder and pointer within that placeholder
-//    strResult = (char *)calloc(((intLength + 2) / 3) * 4, sizeof(char));
-//    objPointer = strResult;
-//    
-//    // Iterate through everything
-//    while (intLength > 2) { // keep going until we have less than 24 bits
-//        *objPointer++ = _base64EncodingTable[objRawData[0] >> 2];
-//        *objPointer++ = _base64EncodingTable[((objRawData[0] & 0x03) << 4) + (objRawData[1] >> 4)];
-//        *objPointer++ = _base64EncodingTable[((objRawData[1] & 0x0f) << 2) + (objRawData[2] >> 6)];
-//        *objPointer++ = _base64EncodingTable[objRawData[2] & 0x3f];
-//        
-//        // we just handled 3 octets (24 bits) of data
-//        objRawData += 3;
-//        intLength -= 3;
-//    }
-//    
-//    // now deal with the tail end of things
-//    if (intLength != 0) {
-//        *objPointer++ = _base64EncodingTable[objRawData[0] >> 2];
-//        if (intLength > 1) {
-//            *objPointer++ = _base64EncodingTable[((objRawData[0] & 0x03) << 4) + (objRawData[1] >> 4)];
-//            *objPointer++ = _base64EncodingTable[(objRawData[1] & 0x0f) << 2];
-//            *objPointer++ = '=';
-//        } else {
-//            *objPointer++ = _base64EncodingTable[(objRawData[0] & 0x03) << 4];
-//            *objPointer++ = '=';
-//            *objPointer++ = '=';
-//        }
-//    }
-//    
-//    NSString *strToReturn = [[NSString alloc] initWithBytesNoCopy:strResult length:objPointer - strResult encoding:NSASCIIStringEncoding freeWhenDone:YES];
-//    return strToReturn;
-//}
-//
-//- (NSData *)decodeBase64WithString:(NSString *)strBase64 {
-//    const char * objPointer = [strBase64 cStringUsingEncoding:NSASCIIStringEncoding];
-//    if (objPointer == NULL)  return nil;
-//    size_t intLength = strlen(objPointer);
-//    int intCurrent;
-//    int i = 0, j = 0, k;
-//    
-//    unsigned char * objResult;
-//    objResult = calloc(intLength, sizeof(char));
-//    
-//    // Run through the whole string, converting as we go
-//    while ( ((intCurrent = *objPointer++) != '\0') && (intLength-- > 0) ) {
-//        if (intCurrent == '=') {
-//            if (*objPointer != '=' && ((i % 4) == 1)) {// || (intLength > 0)) {
-//                // the padding character is invalid at this point -- so this entire string is invalid
-//                free(objResult);
-//                return nil;
-//            }
-//            continue;
-//        }
-//        
-//        intCurrent = _base64DecodingTable[intCurrent];
-//        if (intCurrent == -1) {
-//            // we're at a whitespace -- simply skip over
-//            continue;
-//        } else if (intCurrent == -2) {
-//            // we're at an invalid character
-//            free(objResult);
-//            return nil;
-//        }
-//        
-//        switch (i % 4) {
-//            case 0:
-//                objResult[j] = intCurrent << 2;
-//                break;
-//                
-//            case 1:
-//                objResult[j++] |= intCurrent >> 4;
-//                objResult[j] = (intCurrent & 0x0f) << 4;
-//                break;
-//                
-//            case 2:
-//                objResult[j++] |= intCurrent >>2;
-//                objResult[j] = (intCurrent & 0x03) << 6;
-//                break;
-//                
-//            case 3:
-//                objResult[j++] |= intCurrent;
-//                break;
-//        }
-//        i++;
-//    }
-//    
-//    // mop things up if we ended on a boundary
-//    k = j;
-//    if (intCurrent == '=') {
-//        switch (i % 4) {
-//            case 1:
-//                // Invalid state
-//                free(objResult);
-//                return nil;
-//                
-//            case 2:
-//                k++;
-//                // flow through
-//            case 3:
-//                objResult[k] = 0;
-//        }
-//    }
-//    
-//    // Cleanup and setup the return NSData
-//    return [[NSData alloc] initWithBytesNoCopy:objResult length:j freeWhenDone:YES];
-//}
-//
-//
-//
-
-//
-//static const char _base64EncodingTable[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-//static const short _base64DecodingTable[256] = {
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -1, -1, -2, -1, -1, -2, -2,
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-//    -1, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, 62, -2, -2, -2, 63,
-//    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -2, -2, -2, -2, -2, -2,
-//    -2,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
-//    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -2, -2, -2, -2, -2,
-//    -2, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-//    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -2, -2, -2, -2, -2,
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-//    -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2
-//};
-//

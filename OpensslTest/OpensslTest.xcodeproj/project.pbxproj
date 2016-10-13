@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		B424B0CF1DADD1BD00D860A9 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B424B0CE1DADD1BD00D860A9 /* libcrypto.a */; };
+		B42F8DA31DAF9CAF00692849 /* NSData+Hex.m in Sources */ = {isa = PBXBuildFile; fileRef = B42F8DA21DAF9CAF00692849 /* NSData+Hex.m */; };
+		B42F8DA61DAFACD400692849 /* NSString+Hex.m in Sources */ = {isa = PBXBuildFile; fileRef = B42F8DA51DAFACD400692849 /* NSString+Hex.m */; };
 		B4A617741DAD0FC2008D98E0 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = B4A617731DAD0FC2008D98E0 /* main.m */; };
 		B4A617771DAD0FC2008D98E0 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B4A617761DAD0FC2008D98E0 /* AppDelegate.m */; };
 		B4A6177D1DAD0FC2008D98E0 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B4A6177B1DAD0FC2008D98E0 /* Main.storyboard */; };
@@ -16,7 +18,6 @@
 		B4A6178D1DAD0FC3008D98E0 /* OpensslTestTests.m in Sources */ = {isa = PBXBuildFile; fileRef = B4A6178C1DAD0FC3008D98E0 /* OpensslTestTests.m */; };
 		B4CE96331DAE678300A6B3FE /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B4CE96321DAE678300A6B3FE /* ViewController.m */; };
 		B4CE96361DAE692500A6B3FE /* TTRSA.m in Sources */ = {isa = PBXBuildFile; fileRef = B4CE96351DAE692500A6B3FE /* TTRSA.m */; };
-		B4CE96391DAE6B4100A6B3FE /* NSString+Hex.m in Sources */ = {isa = PBXBuildFile; fileRef = B4CE96381DAE6B4100A6B3FE /* NSString+Hex.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -106,6 +107,10 @@
 		B424B0CC1DADD1B600D860A9 /* x509_vfy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x509_vfy.h; sourceTree = "<group>"; };
 		B424B0CD1DADD1B600D860A9 /* x509v3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x509v3.h; sourceTree = "<group>"; };
 		B424B0CE1DADD1BD00D860A9 /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libcrypto.a; sourceTree = "<group>"; };
+		B42F8DA11DAF9CAF00692849 /* NSData+Hex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSData+Hex.h"; sourceTree = "<group>"; };
+		B42F8DA21DAF9CAF00692849 /* NSData+Hex.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSData+Hex.m"; sourceTree = "<group>"; };
+		B42F8DA41DAFACD400692849 /* NSString+Hex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+Hex.h"; sourceTree = "<group>"; };
+		B42F8DA51DAFACD400692849 /* NSString+Hex.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+Hex.m"; sourceTree = "<group>"; };
 		B4A6176F1DAD0FC2008D98E0 /* OpensslTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpensslTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B4A617731DAD0FC2008D98E0 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		B4A617751DAD0FC2008D98E0 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -117,14 +122,10 @@
 		B4A617881DAD0FC3008D98E0 /* OpensslTestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpensslTestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B4A6178C1DAD0FC3008D98E0 /* OpensslTestTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OpensslTestTests.m; sourceTree = "<group>"; };
 		B4A6178E1DAD0FC3008D98E0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B4A617E61DAD10CC008D98E0 /* 123.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = 123.h; sourceTree = "<group>"; };
-		B4A617E71DAD1219008D98E0 /* 123.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = 123.pch; sourceTree = "<group>"; };
-		B4CE96311DAE678300A6B3FE /* ViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ViewController.h; path = OpensslTest/ViewController.h; sourceTree = "<group>"; };
-		B4CE96321DAE678300A6B3FE /* ViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ViewController.m; path = OpensslTest/ViewController.m; sourceTree = "<group>"; };
+		B4CE96311DAE678300A6B3FE /* ViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		B4CE96321DAE678300A6B3FE /* ViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		B4CE96341DAE692500A6B3FE /* TTRSA.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TTRSA.h; sourceTree = "<group>"; };
 		B4CE96351DAE692500A6B3FE /* TTRSA.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TTRSA.m; sourceTree = "<group>"; };
-		B4CE96371DAE6B4100A6B3FE /* NSString+Hex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+Hex.h"; sourceTree = "<group>"; };
-		B4CE96381DAE6B4100A6B3FE /* NSString+Hex.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+Hex.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -149,12 +150,14 @@
 		B424B0811DADD19400D860A9 /* RSA */ = {
 			isa = PBXGroup;
 			children = (
-				B4CE96371DAE6B4100A6B3FE /* NSString+Hex.h */,
-				B4CE96381DAE6B4100A6B3FE /* NSString+Hex.m */,
+				B424B0821DADD1B600D860A9 /* openssl */,
+				B42F8DA41DAFACD400692849 /* NSString+Hex.h */,
+				B42F8DA51DAFACD400692849 /* NSString+Hex.m */,
+				B42F8DA11DAF9CAF00692849 /* NSData+Hex.h */,
+				B42F8DA21DAF9CAF00692849 /* NSData+Hex.m */,
 				B4CE96341DAE692500A6B3FE /* TTRSA.h */,
 				B4CE96351DAE692500A6B3FE /* TTRSA.m */,
 				B424B0CE1DADD1BD00D860A9 /* libcrypto.a */,
-				B424B0821DADD1B600D860A9 /* openssl */,
 			);
 			path = RSA;
 			sourceTree = "<group>";
@@ -244,8 +247,6 @@
 		B4A617661DAD0FC2008D98E0 = {
 			isa = PBXGroup;
 			children = (
-				B4CE96311DAE678300A6B3FE /* ViewController.h */,
-				B4CE96321DAE678300A6B3FE /* ViewController.m */,
 				B4A617711DAD0FC2008D98E0 /* OpensslTest */,
 				B4A6178B1DAD0FC3008D98E0 /* OpensslTestTests */,
 				B4A617701DAD0FC2008D98E0 /* Products */,
@@ -267,6 +268,8 @@
 				B424B0811DADD19400D860A9 /* RSA */,
 				B4A617751DAD0FC2008D98E0 /* AppDelegate.h */,
 				B4A617761DAD0FC2008D98E0 /* AppDelegate.m */,
+				B4CE96311DAE678300A6B3FE /* ViewController.h */,
+				B4CE96321DAE678300A6B3FE /* ViewController.m */,
 				B4A6177B1DAD0FC2008D98E0 /* Main.storyboard */,
 				B4A6177E1DAD0FC2008D98E0 /* Assets.xcassets */,
 				B4A617801DAD0FC2008D98E0 /* LaunchScreen.storyboard */,
@@ -280,8 +283,6 @@
 			isa = PBXGroup;
 			children = (
 				B4A617731DAD0FC2008D98E0 /* main.m */,
-				B4A617E71DAD1219008D98E0 /* 123.pch */,
-				B4A617E61DAD10CC008D98E0 /* 123.h */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -398,9 +399,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B42F8DA31DAF9CAF00692849 /* NSData+Hex.m in Sources */,
+				B42F8DA61DAFACD400692849 /* NSString+Hex.m in Sources */,
 				B4A617771DAD0FC2008D98E0 /* AppDelegate.m in Sources */,
 				B4CE96331DAE678300A6B3FE /* ViewController.m in Sources */,
-				B4CE96391DAE6B4100A6B3FE /* NSString+Hex.m in Sources */,
 				B4A617741DAD0FC2008D98E0 /* main.m in Sources */,
 				B4CE96361DAE692500A6B3FE /* TTRSA.m in Sources */,
 			);
@@ -540,9 +542,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = Y364PD6P4Y;
 				ENABLE_BITCODE = NO;
-				GCC_PREFIX_HEADER = "$(SRCROOT)/OpensslTest/123.pch";
+				GCC_PREFIX_HEADER = "";
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/OpensslTest/RSA/";
 				INFOPLIST_FILE = OpensslTest/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -563,9 +566,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = Y364PD6P4Y;
 				ENABLE_BITCODE = NO;
-				GCC_PREFIX_HEADER = "$(SRCROOT)/OpensslTest/123.pch";
+				GCC_PREFIX_HEADER = "";
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/OpensslTest/RSA/";
 				INFOPLIST_FILE = OpensslTest/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",

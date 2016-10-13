@@ -18,8 +18,8 @@
 
 @interface NSString (Hex)
 
-- (NSString*)sha1ByHex;
-- (NSData*)hexToBytes ;
+- (NSData*)sha1;
+- (NSData*)toHexString;
 
 @end
 

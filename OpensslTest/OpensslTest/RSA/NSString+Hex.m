@@ -20,20 +20,19 @@
 
 @implementation NSString (Hex)
 
-- (NSString*)sha1ByHex{
-    unsigned int outputLength = CC_SHA1_DIGEST_LENGTH;
-    unsigned char output[outputLength];
+- (NSData *)sha1{
     
-//    CC_SHA1([[self hexToBytes] bytes], (CC_LONG)[[self hexToBytes] length], output);
-    CC_SHA1(self.UTF8String, [self UTF8Length], output);
-    return [self toHexString:output length:outputLength];
+    const char *cstr = [self cStringUsingEncoding:NSUTF8StringEncoding];
+    NSData *data = [NSData dataWithBytes:cstr length:self.length];
+    
+    uint8_t digest[CC_SHA1_DIGEST_LENGTH];
+    
+    CC_SHA1(data.bytes, (CC_LONG)data.length, digest);
+    
+    return [[NSMutableData dataWithBytes:digest length:(NSUInteger)CC_SHA1_DIGEST_LENGTH] copy];
 }
 
-- (unsigned int) UTF8Length {
-    return (unsigned int) [self lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
-}
-
--(NSData*) hexToBytes {
+-(NSData*)toHexData{
     NSMutableData* data = [NSMutableData data];
     int idx;
     for (idx = 0; idx+2 <= self.length; idx+=2) {
@@ -47,12 +46,4 @@
     return data;
 }
 
-- (NSString*)toHexString:(unsigned char*) data length: (unsigned int) length {
-    NSMutableString* hash = [NSMutableString stringWithCapacity:length * 2];
-    for (unsigned int i = 0; i < length; i++) {
-        [hash appendFormat:@"%02x", data[i]];
-        data[i] = 0;
-    }
-    return hash;
-}
 @end
